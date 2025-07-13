@@ -65,11 +65,20 @@ bot.on('message', async (msg) => {
       const fileUrl = `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${file.file_path}`;
       const buffer = await downloadTelegramFile(fileUrl);
       const fileName = `${fileId}.jpg`;
-      const supabaseUrl = await uploadToSupabaseStorage(buffer, fileName, 'image/jpeg');
+      const filePath = `${Date.now()}_${fileName}`;
+      await supabase.storage
+        .from(SUPABASE_BUCKET)
+        .upload(filePath, buffer, { contentType: 'image/jpeg', upsert: false });
+      // Generate a signed URL (7 days)
+      const { data: signedUrlData, error: signedUrlError } = await supabase
+        .storage
+        .from(SUPABASE_BUCKET)
+        .createSignedUrl(filePath, 60 * 60 * 24 * 7);
+      if (signedUrlError) throw signedUrlError;
+      const signedUrl = signedUrlData.signedUrl;
       const payload = {
         type: 'image',
-        file_url: supabaseUrl,
-        file_name: fileName,
+        file_url: signedUrl,
         mime_type: 'image/jpeg',
         telegram_user_id: userId
       };
@@ -102,15 +111,24 @@ bot.on('message', async (msg) => {
       const buffer = await downloadTelegramFile(fileUrl);
       const fileName = msg.document.file_name || `${fileId}`;
       const contentType = msg.document.mime_type || 'application/octet-stream';
-      const supabaseUrl = await uploadToSupabaseStorage(buffer, fileName, contentType);
+      const filePath = `${Date.now()}_${fileName}`;
+      await supabase.storage
+        .from(SUPABASE_BUCKET)
+        .upload(filePath, buffer, { contentType, upsert: false });
+      // Generate a signed URL (7 days)
+      const { data: signedUrlData, error: signedUrlError } = await supabase
+        .storage
+        .from(SUPABASE_BUCKET)
+        .createSignedUrl(filePath, 60 * 60 * 24 * 7);
+      if (signedUrlError) throw signedUrlError;
+      const signedUrl = signedUrlData.signedUrl;
       const payload = {
-        type: 'document',
-        file_url: supabaseUrl,
-        file_name: fileName,
+        type: 'file',
+        file_url: signedUrl,
         mime_type: contentType,
         telegram_user_id: userId
       };
-      console.log('Sending document payload to STASHIT_API:', payload);
+      console.log('Sending file payload to STASHIT_API:', payload);
       const response = await fetch(STASHIT_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -122,10 +140,100 @@ bot.on('message', async (msg) => {
       } catch (e) {
         data = await response.text();
       }
-      console.log('STASHIT_API document response:', data);
+      console.log('STASHIT_API file response:', data);
       bot.sendMessage(chatId, 'Document saved to StashIt!');
     } catch (err) {
       bot.sendMessage(chatId, `Failed to save document: ${err.message}`);
+    }
+    return;
+  }
+
+  // Handle audio
+  if (msg.audio) {
+    try {
+      const fileId = msg.audio.file_id;
+      const file = await bot.getFile(fileId);
+      const fileUrl = `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${file.file_path}`;
+      const buffer = await downloadTelegramFile(fileUrl);
+      const fileName = msg.audio.file_name || `${fileId}.mp3`;
+      const contentType = msg.audio.mime_type || 'audio/mpeg';
+      const filePath = `${Date.now()}_${fileName}`;
+      await supabase.storage
+        .from(SUPABASE_BUCKET)
+        .upload(filePath, buffer, { contentType, upsert: false });
+      const { data: signedUrlData, error: signedUrlError } = await supabase
+        .storage
+        .from(SUPABASE_BUCKET)
+        .createSignedUrl(filePath, 60 * 60 * 24 * 7);
+      if (signedUrlError) throw signedUrlError;
+      const signedUrl = signedUrlData.signedUrl;
+      const payload = {
+        type: 'audio',
+        file_url: signedUrl,
+        mime_type: contentType,
+        telegram_user_id: userId
+      };
+      console.log('Sending audio payload to STASHIT_API:', payload);
+      const response = await fetch(STASHIT_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        data = await response.text();
+      }
+      console.log('STASHIT_API audio response:', data);
+      bot.sendMessage(chatId, 'Audio saved to StashIt!');
+    } catch (err) {
+      bot.sendMessage(chatId, `Failed to save audio: ${err.message}`);
+    }
+    return;
+  }
+
+  // Handle videos
+  if (msg.video) {
+    try {
+      const fileId = msg.video.file_id;
+      const file = await bot.getFile(fileId);
+      const fileUrl = `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${file.file_path}`;
+      const buffer = await downloadTelegramFile(fileUrl);
+      const fileName = msg.video.file_name || `${fileId}.mp4`;
+      const contentType = msg.video.mime_type || 'video/mp4';
+      const filePath = `${Date.now()}_${fileName}`;
+      await supabase.storage
+        .from(SUPABASE_BUCKET)
+        .upload(filePath, buffer, { contentType, upsert: false });
+      const { data: signedUrlData, error: signedUrlError } = await supabase
+        .storage
+        .from(SUPABASE_BUCKET)
+        .createSignedUrl(filePath, 60 * 60 * 24 * 7);
+      if (signedUrlError) throw signedUrlError;
+      const signedUrl = signedUrlData.signedUrl;
+      const payload = {
+        type: 'video',
+        file_url: signedUrl,
+        mime_type: contentType,
+        telegram_user_id: userId
+      };
+      console.log('Sending video payload to STASHIT_API:', payload);
+      const response = await fetch(STASHIT_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        data = await response.text();
+      }
+      console.log('STASHIT_API video response:', data);
+      bot.sendMessage(chatId, 'Video saved to StashIt!');
+    } catch (err) {
+      bot.sendMessage(chatId, `Failed to save video: ${err.message}`);
     }
     return;
   }
