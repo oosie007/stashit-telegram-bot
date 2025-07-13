@@ -79,6 +79,7 @@ bot.on('message', async (msg) => {
       const payload = {
         type: 'image',
         file_url: signedUrl,
+        file_path: filePath,
         mime_type: 'image/jpeg',
         telegram_user_id: userId
       };
@@ -125,6 +126,7 @@ bot.on('message', async (msg) => {
       const payload = {
         type: 'file',
         file_url: signedUrl,
+        file_path: filePath,
         mime_type: contentType,
         telegram_user_id: userId
       };
@@ -170,6 +172,7 @@ bot.on('message', async (msg) => {
       const payload = {
         type: 'audio',
         file_url: signedUrl,
+        file_path: filePath,
         mime_type: contentType,
         telegram_user_id: userId
       };
@@ -215,6 +218,7 @@ bot.on('message', async (msg) => {
       const payload = {
         type: 'video',
         file_url: signedUrl,
+        file_path: filePath,
         mime_type: contentType,
         telegram_user_id: userId
       };
