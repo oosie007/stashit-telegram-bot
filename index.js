@@ -66,14 +66,18 @@ bot.on('message', async (msg) => {
       const buffer = await downloadTelegramFile(fileUrl);
       const fileName = `${fileId}.jpg`;
       const supabaseUrl = await uploadToSupabaseStorage(buffer, fileName, 'image/jpeg');
+      const payload = {
+        type: 'image',
+        file_url: supabaseUrl,
+        file_name: fileName,
+        mime_type: 'image/jpeg',
+        telegram_user_id: userId
+      };
+      console.log('Sending image payload to STASHIT_API:', payload);
       await fetch(STASHIT_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'image',
-          file_url: supabaseUrl,
-          telegram_user_id: userId
-        })
+        body: JSON.stringify(payload)
       });
       bot.sendMessage(chatId, 'Photo saved to StashIt!');
     } catch (err) {
@@ -92,15 +96,18 @@ bot.on('message', async (msg) => {
       const fileName = msg.document.file_name || `${fileId}`;
       const contentType = msg.document.mime_type || 'application/octet-stream';
       const supabaseUrl = await uploadToSupabaseStorage(buffer, fileName, contentType);
+      const payload = {
+        type: 'document',
+        file_url: supabaseUrl,
+        file_name: fileName,
+        mime_type: contentType,
+        telegram_user_id: userId
+      };
+      console.log('Sending document payload to STASHIT_API:', payload);
       await fetch(STASHIT_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'document',
-          file_url: supabaseUrl,
-          file_name: fileName,
-          telegram_user_id: userId
-        })
+        body: JSON.stringify(payload)
       });
       bot.sendMessage(chatId, 'Document saved to StashIt!');
     } catch (err) {
