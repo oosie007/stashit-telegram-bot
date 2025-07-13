@@ -74,11 +74,18 @@ bot.on('message', async (msg) => {
         telegram_user_id: userId
       };
       console.log('Sending image payload to STASHIT_API:', payload);
-      await fetch(STASHIT_API, {
+      const response = await fetch(STASHIT_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        data = await response.text();
+      }
+      console.log('STASHIT_API image response:', data);
       bot.sendMessage(chatId, 'Photo saved to StashIt!');
     } catch (err) {
       bot.sendMessage(chatId, `Failed to save photo: ${err.message}`);
@@ -104,11 +111,18 @@ bot.on('message', async (msg) => {
         telegram_user_id: userId
       };
       console.log('Sending document payload to STASHIT_API:', payload);
-      await fetch(STASHIT_API, {
+      const response = await fetch(STASHIT_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        data = await response.text();
+      }
+      console.log('STASHIT_API document response:', data);
       bot.sendMessage(chatId, 'Document saved to StashIt!');
     } catch (err) {
       bot.sendMessage(chatId, `Failed to save document: ${err.message}`);
